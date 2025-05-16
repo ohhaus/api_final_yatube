@@ -4,7 +4,6 @@ from django.db import models
 from .constants import (
     COMMENT_CREATED_VERBOSE,
     COMMENT_STR_LENGTH,
-    COMMENTS_RELATED_NAME,
     FOLLOWS_RELATED_NAME,
     GROUP_TITLE_MAX_LENGTH,
     POST_IMAGE_UPLOAD_PATH,
@@ -32,7 +31,9 @@ class Post(models.Model):
         POST_PUB_DATE_VERBOSE, auto_now_add=True
     )
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE
+        User,
+        on_delete=models.CASCADE,
+        related_name=POSTS_RELATED_NAME
     )
     image = models.ImageField(
         upload_to=POST_IMAGE_UPLOAD_PATH,
@@ -42,12 +43,10 @@ class Post(models.Model):
     group = models.ForeignKey(
         Group,
         on_delete=models.SET_NULL,
+        related_name=POSTS_RELATED_NAME,
         blank=True,
         null=True
     )
-
-    class Meta:
-        default_related_name = POSTS_RELATED_NAME
 
     def __str__(self):
         return self.text
@@ -55,18 +54,21 @@ class Post(models.Model):
 
 class Comment(models.Model):
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE
+        User,
+        on_delete=models.CASCADE,
+        related_name='comments'
     )
     post = models.ForeignKey(
-        Post, on_delete=models.CASCADE
+        Post,
+        on_delete=models.CASCADE,
+        related_name='comments'
     )
     text = models.TextField()
     created = models.DateTimeField(
-        COMMENT_CREATED_VERBOSE, auto_now_add=True, db_index=True
+        COMMENT_CREATED_VERBOSE,
+        auto_now_add=True,
+        db_index=True
     )
-
-    class Meta:
-        default_related_name = COMMENTS_RELATED_NAME
 
     def __str__(self):
         return (

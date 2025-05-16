@@ -1,9 +1,6 @@
-from typing import Type
-
-from django.db.models import QuerySet
-
-from rest_framework import filters, mixins, viewsets
+from rest_framework import filters, mixins, permissions, viewsets
 from rest_framework.generics import get_object_or_404
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import IsAuthenticated
 
 from api.permissions import IsOwnerOrReadOnly
@@ -19,11 +16,17 @@ from posts.models import Follow, Group, Post
 class PostViewSet(viewsets.ModelViewSet):
     """Вьюсет для работы с постами."""
 
-    queryset: QuerySet[Post] = Post.objects.all()
-    serializer_class: Type[PostSerializer] = PostSerializer
-    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = (IsOwnerOrReadOnly,)
+    pagination_class = LimitOffsetPagination
 
-    def perform_create(self, serializer: PostSerializer) -> None:
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [IsAuthenticated(), IsOwnerOrReadOnly()]
+        return [permissions.AllowAny()]
+
+    def perform_create(self, serializer):
         """Создает новый пост с текущим пользователем как автором."""
         serializer.save(author=self.request.user)
 
@@ -31,26 +34,32 @@ class PostViewSet(viewsets.ModelViewSet):
 class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     """Вьюсет для просмотра групп."""
 
-    queryset: QuerySet[Group] = Group.objects.all()
-    serializer_class: Type[GroupSerializer] = GroupSerializer
-    permission_classes = (IsAuthenticated,)
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+    permission_classes = (permissions.AllowAny,)
+    pagination_class = LimitOffsetPagination
 
 
 class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для работы с комментариями."""
 
-    serializer_class: Type[CommentSerializer] = CommentSerializer
-    permission_classes = (IsAuthenticated, IsOwnerOrReadOnly)
+    serializer_class = CommentSerializer
+    permission_classes = (IsOwnerOrReadOnly,)
 
-    def get_post(self) -> Post:
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [IsAuthenticated(), IsOwnerOrReadOnly()]
+        return [permissions.AllowAny()]
+
+    def get_post(self):
         """Получает пост по post_id из параметров URL."""
         return get_object_or_404(Post, id=self.kwargs.get('post_id'))
 
-    def get_queryset(self) -> QuerySet:
+    def get_queryset(self):
         """Возвращает queryset комментариев для конкретного поста."""
         return self.get_post().comments.all()
 
-    def perform_create(self, serializer: CommentSerializer) -> None:
+    def perform_create(self, serializer):
         """Создает новый комментарий с привязкой к посту и автору."""
         serializer.save(author=self.request.user, post=self.get_post())
 
@@ -62,15 +71,16 @@ class FollowViewSet(
 ):
     """Вьюсет для работы с подписками."""
 
-    serializer_class: Type[FollowSerializer] = FollowSerializer
+    serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated,)
+    pagination_class = LimitOffsetPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('following__username',)
 
-    def get_queryset(self) -> QuerySet[Follow]:
+    def get_queryset(self):
         """Возвращает queryset подписок текущего пользователя."""
         return Follow.objects.filter(user=self.request.user)
 
-    def perform_create(self, serializer: FollowSerializer) -> None:
+    def perform_create(self, serializer):
         """Создает подписку от имени текущего пользователя."""
         serializer.save(user=self.request.user)
