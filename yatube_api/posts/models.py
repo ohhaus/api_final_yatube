@@ -1,11 +1,23 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from .constants import (
+    GROUP_TITLE_MAX_LENGTH,
+    COMMENT_STR_LENGTH,
+    POST_IMAGE_UPLOAD_PATH,
+    POSTS_RELATED_NAME,
+    COMMENTS_RELATED_NAME,
+    FOLLOWS_RELATED_NAME,
+    POST_PUB_DATE_VERBOSE,
+    COMMENT_CREATED_VERBOSE,
+    UNIQUE_FOLLOW_CONSTRAINT,
+)
+
 User = get_user_model()
 
 
 class Group(models.Model):
-    title = models.CharField(max_length=200)
+    title = models.CharField(max_length=GROUP_TITLE_MAX_LENGTH)
     slug = models.SlugField(unique=True)
     description = models.TextField()
 
@@ -16,13 +28,15 @@ class Group(models.Model):
 class Post(models.Model):
     text = models.TextField()
     pub_date = models.DateTimeField(
-        'Дата публикации', auto_now_add=True
+        POST_PUB_DATE_VERBOSE, auto_now_add=True
     )
     author = models.ForeignKey(
         User, on_delete=models.CASCADE
     )
     image = models.ImageField(
-        upload_to='posts/', null=True, blank=True
+        upload_to=POST_IMAGE_UPLOAD_PATH,
+        null=True,
+        blank=True
     )
     group = models.ForeignKey(
         Group,
@@ -32,7 +46,7 @@ class Post(models.Model):
     )
 
     class Meta:
-        default_related_name = 'posts'
+        default_related_name = POSTS_RELATED_NAME
 
     def __str__(self):
         return self.text
@@ -47,12 +61,42 @@ class Comment(models.Model):
     )
     text = models.TextField()
     created = models.DateTimeField(
-        'Дата добавления', auto_now_add=True, db_index=True
+        COMMENT_CREATED_VERBOSE, auto_now_add=True, db_index=True
     )
 
     class Meta:
-        default_related_name = 'comments'
+        default_related_name = COMMENTS_RELATED_NAME
 
     def __str__(self):
-        return f'Комментарий {self.author.username} к посту ' \
-               f'{self.post.id}: {self.text[:15]}...'
+        return (
+            'Комментарий {author} к посту {post_id}: {text}...'.format(
+                author=self.author.username,
+                post_id=self.post.pk,
+                text=self.text[:COMMENT_STR_LENGTH]
+            )
+        )
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='follower'
+    )
+    following = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='following'
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'following'],
+                name=UNIQUE_FOLLOW_CONSTRAINT
+            )
+        ]
+        default_related_name = FOLLOWS_RELATED_NAME
+
+    def __str__(self):
+        return f'{self.user.username} подписан на {self.following.username}'
