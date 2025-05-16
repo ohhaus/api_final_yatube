@@ -1,18 +1,19 @@
+from typing import Type
+
 from django.db.models import QuerySet
+
 from rest_framework import filters, mixins, viewsets
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
-from typing import Type
 
-
+from api.permissions import IsOwnerOrReadOnly
 from api.serializers import (
     CommentSerializer,
+    FollowSerializer,
     GroupSerializer,
     PostSerializer,
-    FollowSerializer
 )
-from posts.models import Group, Post, Follow
-from api.permissions import IsOwnerOrReadOnly
+from posts.models import Follow, Group, Post
 
 
 class PostViewSet(viewsets.ModelViewSet):

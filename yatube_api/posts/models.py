@@ -2,16 +2,17 @@ from django.contrib.auth import get_user_model
 from django.db import models
 
 from .constants import (
-    GROUP_TITLE_MAX_LENGTH,
+    COMMENT_CREATED_VERBOSE,
     COMMENT_STR_LENGTH,
-    POST_IMAGE_UPLOAD_PATH,
-    POSTS_RELATED_NAME,
     COMMENTS_RELATED_NAME,
     FOLLOWS_RELATED_NAME,
+    GROUP_TITLE_MAX_LENGTH,
+    POST_IMAGE_UPLOAD_PATH,
     POST_PUB_DATE_VERBOSE,
-    COMMENT_CREATED_VERBOSE,
+    POSTS_RELATED_NAME,
     UNIQUE_FOLLOW_CONSTRAINT,
 )
+
 
 User = get_user_model()
 

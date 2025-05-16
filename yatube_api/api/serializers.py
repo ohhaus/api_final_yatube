@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 
-from api.constants import SELF_FOLLOW_ERROR, ALREADY_FOLLOWING_ERROR
+from api.constants import ALREADY_FOLLOWING_ERROR, SELF_FOLLOW_ERROR
 from posts.models import Comment, Follow, Group, Post, User
 
 
